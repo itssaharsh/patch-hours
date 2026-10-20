@@ -7,13 +7,14 @@ export function WeekApp() {
   const [v, setV] = useState<SessionView | null>(null);
   const [err, setErr] = useState("");
   const [code, setCode] = useState("");
+  const [days, setDays] = useState<string[]>([]);
   useEffect(() => {
     const c = new URLSearchParams(location.search).get("code")?.toUpperCase() ?? "";
     setCode(c);
+    setDays(Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return today(d); }));
     if (!c) { setErr("Open this page from the phone check, or add ?code= with the TV code."); return; }
     fetch(`/api/session/${c}?day=${today()}`).then(async (r) => r.ok ? setV(await r.json()) : setErr("Couldn't load this TV's minutes."));
   }, []);
-  const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return today(d); });
   const by = Object.fromEntries((v?.days ?? []).map((d) => [d.day, d]));
   const total = (k: "verifiedSec" | "attestedSec") => days.reduce((n, d) => n + (by[d]?.[k] ?? 0), 0) / 60;
   return (
