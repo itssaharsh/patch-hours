@@ -1,0 +1,28 @@
+.tv { width: 100%; aspect-ratio: 16 / 9; display: grid; grid-template-columns: 1fr 26%; gap: 2.2%; padding: 2.2%;
+  background: var(--canvas); container-type: inline-size; overflow: hidden; }
+.stage { position: relative; border-radius: var(--r-md); overflow: hidden; background: #000; align-self: center; aspect-ratio: 16 / 9; }
+.video { width: 100%; height: 100%; display: block; object-fit: cover; transition: opacity 240ms var(--ease-out), filter 240ms; }
+.tv[data-phase^="paused"] .video { opacity: .35; filter: saturate(.4); }
+.tv[data-phase="pairing"] .video { opacity: .12; }
+.prompt { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding: 6%; }
+.promptText { font-size: 4.6cqi; margin: 0; color: var(--ink); }
+.pauseNote { font-size: 1.6cqi; color: var(--accent); margin: 1.2cqi 0 0; }
+.start { position: absolute; left: 50%; bottom: 8%; translate: -50% 0; font-size: 1.5cqi; min-height: 3.6cqi; padding: 0 2.4cqi; }
+.pair { position: absolute; inset: 0; display: grid; align-content: center; padding: 6%; gap: 2cqi; }
+.pairTitle { font-size: 4cqi; margin: 0; }
+.pairRow { display: flex; gap: 3cqi; align-items: center; }
+.qr { width: 15cqi; height: 15cqi; border-radius: var(--r-sm); background: var(--surface-2); }
+.pairLabel { margin: 0; color: var(--ink-muted); font-size: 1.3cqi; }
+.pairRow .code { font-size: 7cqi; letter-spacing: .08em; margin: 0; color: var(--accent); }
+.pairRow p { font-size: 1.3cqi; margin: .4cqi 0; }
+.rail { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.2cqi; text-align: center; min-width: 0; }
+.rail svg { width: 100%; height: auto; }
+.brand { font-size: 2.2cqi; margin: 0; color: var(--accent); }
+.minutes { font-size: 3.6cqi; margin: 0; }
+.minutes span { font-size: 1.4cqi; color: var(--ink-muted); font-family: var(--ff-body); font-weight: 600; }
+.chip { display: inline-flex; align-items: center; gap: .7cqi; font-size: 1.4cqi; font-weight: 600; margin: 0;
+  padding: .5cqi 1.2cqi; border-radius: var(--r-pill); background: var(--surface-1); color: var(--off); }
+.chip[data-on="true"] { color: var(--data-patch); }
+.dot { width: .9cqi; height: .9cqi; border-radius: 50%; background: currentColor; }
+.err { color: var(--off); font-size: 1.2cqi; margin: 0; }
+.credit { font-size: 1cqi; color: var(--ink-muted); margin: auto 0 0; }
