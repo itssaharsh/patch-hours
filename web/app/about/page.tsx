@@ -5,7 +5,7 @@ export default function About() {
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "32px 16px 64px", lineHeight: 1.6 }}>
       <p className="display" style={{ color: "var(--accent)", fontSize: 24, margin: 0 }}>Patch Hours</p>
       <h1 style={{ fontSize: 44, margin: "8px 0 12px" }}>The show plays only while the eye patch is on</h1>
-      <p style={{ fontSize: 19 }}>A Fire TV app and a phone check for children patching for amblyopia. The cartoon pauses when the patch comes off, and the minutes it was really worn are counted for the clinic.</p>
+      <p style={{ fontSize: 19 }}>A Fire TV app and a phone check for children patching for amblyopia. The cartoon pauses when the patch comes off, and the minutes the phone saw the patch on are counted for the clinic.</p>
       <h2>Why</h2>
       <ul>
         <li>In 152 children whose patching was measured, mean compliance was 44% and on 42% of days no patch was worn (<a href="https://openaccess.city.ac.uk/id/eprint/2796">Wallace et al., 2013</a>).</li>

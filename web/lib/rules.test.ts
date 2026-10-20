@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyHeartbeat, attest, isCode, isPlayable, newCode, newSession, parseHeartbeat, view, STALE_MS } from "./rules";
 
-const day = "2026-10-21";
+const day = new Date().toISOString().slice(0, 10);
 const on = { on: true, cls: "patch" as const, conf: 1, day };
 const off = { on: false, cls: "bare" as const, conf: 1, day };
 
@@ -65,5 +65,15 @@ describe("heartbeat validation (AC-8)", () => {
     expect(parseHeartbeat({ ...on, cls: "bare" })).toBeNull();
     expect(parseHeartbeat({ ...on, conf: 2 })).toBeNull();
     expect(parseHeartbeat({ ...on, day: "today" })).toBeNull();
+  });
+});
+
+describe("day validation (review M4)", () => {
+  it("rejects impossible and far-off dates", async () => {
+    const { isRecentDay } = await import("./rules");
+    expect(isRecentDay("9999-99-99")).toBe(false);
+    expect(isRecentDay("2026-02-30")).toBe(false);
+    expect(isRecentDay("2020-01-01")).toBe(false);
+    expect(isRecentDay(new Date().toISOString().slice(0, 10))).toBe(true);
   });
 });

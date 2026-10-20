@@ -4,7 +4,7 @@ import { GET as read } from "./[code]/route";
 import { POST as flag } from "./[code]/flag/route";
 
 const ctx = (code: string) => ({ params: Promise.resolve({ code }) }) as never;
-const day = "2026-10-21";
+const day = new Date().toISOString().slice(0, 10);
 
 describe("session API round trip (AC-1..AC-3, AC-8)", () => {
   it("creates a code, accepts a flag, and reports playable", async () => {

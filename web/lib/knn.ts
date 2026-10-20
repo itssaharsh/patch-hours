@@ -25,11 +25,13 @@ export function isOn(v: Vote | null, min = 0.6): boolean {
   return !!v && v.label === "patch" && v.patchShare >= min;
 }
 
-/** Every 4th example of each label is held out; the rest train. */
+/** The last quarter of each label's frames (the latest captured) is held out; earlier frames train.
+ *  Held-out frames still come from the same session, so the numbers are an upper bound. */
 export function split(all: Example[]): { train: Example[]; test: Example[] } {
-  const seen: Record<string, number> = {};
+  const total: Record<string, number> = {}, seen: Record<string, number> = {};
+  for (const e of all) total[e.label] = (total[e.label] ?? 0) + 1;
   const train: Example[] = [], test: Example[] = [];
-  for (const e of all) { const n = (seen[e.label] = (seen[e.label] ?? 0) + 1); (n % 4 === 0 ? test : train).push(e); }
+  for (const e of all) { const n = (seen[e.label] = (seen[e.label] ?? 0) + 1); (n > total[e.label] - Math.ceil(total[e.label] / 4) ? test : train).push(e); }
   return { train, test };
 }
 

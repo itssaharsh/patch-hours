@@ -19,6 +19,7 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/session/[code]
   if (!s) return err(404, "unknown code");
   let b: { prescribedMin?: number; eye?: string };
   try { b = await req.json(); } catch { return err(400, "json body required"); }
+  if (!b || typeof b !== "object") return err(400, "json object required");
   if (b.prescribedMin !== undefined) {
     const m = Number(b.prescribedMin);
     if (!(m >= 10 && m <= 600)) return err(400, "prescribedMin must be 10 to 600");

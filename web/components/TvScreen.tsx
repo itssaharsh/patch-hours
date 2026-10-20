@@ -21,15 +21,25 @@ export function TvScreen({ initialCode }: { initialCode?: string | null }) {
   const [pauseNote, setPauseNote] = useState<string>("");
   const video = useRef<HTMLVideoElement>(null);
   const wasPlaying = useRef(false);
-  const { view, error, missing } = useSession(code);
+  const { view, error, missing, lastOk } = useSession(code);
+  const [now, setNow] = useState(0);
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  // No successful poll for 4 s: the TV can't know the patch is on, so it pauses.
+  const offline = !!view && now - lastOk > 4000;
 
-  // A TV gets its own pairing code; it survives a reload.
+  // A TV gets its own pairing code; it survives a reload. A code the server no longer knows is replaced once.
+  const creating = useRef(false);
   useEffect(() => {
-    if (new URLSearchParams(location.search).get("code") && !missing) return;
     if (code && !missing) return;
+    if (missing) localStorage.removeItem("ph.tv.code");
     const saved = !missing ? localStorage.getItem("ph.tv.code") : null;
     if (saved) { setCode(saved); return; }
-    createSession().then((s) => { localStorage.setItem("ph.tv.code", s.code); setCode(s.code); }).catch(() => setTimeout(() => setCode(null), 3000));
+    if (creating.current) return;
+    creating.current = true;
+    createSession()
+      .then((s) => { localStorage.setItem("ph.tv.code", s.code); setCode(s.code); })
+      .catch(() => setTimeout(() => setCode(null), 3000))
+      .finally(() => { creating.current = false; });
   }, [code, missing]);
 
   useEffect(() => {
@@ -37,7 +47,7 @@ export function TvScreen({ initialCode }: { initialCode?: string | null }) {
     QRCode.toDataURL(`${location.origin}/check?code=${code}`, { margin: 1, width: 560, color: { dark: "#1D1714", light: "#F6EDE4" } }).then(setQr);
   }, [code]);
 
-  let phase: Phase = !view?.paired ? "pairing" : view.playable ? "playing" : view.stale ? "paused-stale" : view.flag.cls === "covered" ? "paused-covered" : "paused-off";
+  let phase: Phase = !view?.paired ? "pairing" : view.playable && !offline ? "playing" : view.stale || offline ? "paused-stale" : view.flag.cls === "covered" ? "paused-covered" : "paused-off";
   if (forceState && ["pairing", "playing", "paused-off", "paused-stale", "paused-covered"].includes(forceState)) phase = forceState as Phase;
 
   // Play or pause the reward strictly by the session state.

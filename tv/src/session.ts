@@ -36,6 +36,7 @@ export function useTvSession() {
   const [code, setCode] = useState<string | null>(null);
   const [view, setView] = useState<SessionView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastOk, setLastOk] = useState(0);
   const alive = useRef(true);
 
   useEffect(() => {
@@ -79,6 +80,7 @@ export function useTvSession() {
         if (live) {
           setView(v);
           setError(null);
+          setLastOk(Date.now());
         }
       } catch (e) {
         if (live) {
@@ -96,5 +98,5 @@ export function useTvSession() {
     };
   }, [code]);
 
-  return {code, view, error};
+  return {code, view, error, lastOk};
 }

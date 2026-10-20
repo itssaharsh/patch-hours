@@ -1,6 +1,6 @@
 # Patch Hours
 
-**The show plays only while the eye patch is on.** A Fire TV app and a phone check for children patching for amblyopia (lazy eye): the cartoon pauses when the patch comes off, and the minutes it was really worn are counted.
+**The show plays only while the eye patch is on.** A Fire TV app and a phone check for children patching for amblyopia (lazy eye): the cartoon pauses when the patch comes off, and the minutes the phone saw the patch on are counted.
 
 ![Patch Hours on the Vega Virtual Device: the show paused, "Patch back on to keep watching", paused 0.5 s after the patch came off](docs/img/vega-paused.png)
 
@@ -49,5 +49,8 @@ Run the checks: `npm --prefix web test` · `npm --prefix tv test`.
 - An adherence aid for a prescribed patch. It does not treat amblyopia or change a prescription.
 - Fire TV blocks apps from opening content inside other apps, so the reward plays inside Patch Hours.
 - Tested on the Vega Virtual Device only, not on a physical Fire TV.
+- The TV app makes a new pairing code each time it starts, so the phone pairs again (and is taught again) after a restart.
+- Anyone holding a pairing code can send on/off signals for it; codes are random, six characters, and expire after 30 days.
+- The held-out precision and recall come from frames captured in the same session, so they are an upper bound.
 
 Built for the Build, Ship, Shape: Amazon Developer Hackathon. This repository was started on 20 October 2026; nothing in it existed before the event. AI tools used: Claude Code (planning and code). See [FRICTION_LOG.md](FRICTION_LOG.md) and [FEEDBACK.md](FEEDBACK.md).

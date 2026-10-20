@@ -21,9 +21,11 @@ export function useSession(code: string | null, intervalMs = 1000) {
   const [view, setView] = useState<SessionView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [missing, setMissing] = useState(false);
+  const [lastOk, setLastOk] = useState(0);
   const alive = useRef(true);
   useEffect(() => {
     alive.current = true;
+    setMissing(false);
     if (!code) return;
     let t: ReturnType<typeof setTimeout>;
     const tick = async () => {
@@ -32,7 +34,7 @@ export function useSession(code: string | null, intervalMs = 1000) {
         if (r.status === 404) { setMissing(true); return; }
         if (!r.ok) throw new Error(String(r.status));
         const v = (await r.json()) as SessionView;
-        if (alive.current) { setView(v); setError(null); }
+        if (alive.current) { setView(v); setError(null); setLastOk(Date.now()); }
       } catch (e) {
         if (alive.current) setError(String(e));
       }
@@ -41,5 +43,5 @@ export function useSession(code: string | null, intervalMs = 1000) {
     tick();
     return () => { alive.current = false; clearTimeout(t); };
   }, [code, intervalMs]);
-  return { view, error, missing };
+  return { view, error, missing, lastOk };
 }

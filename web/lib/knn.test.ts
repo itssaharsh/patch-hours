@@ -26,7 +26,7 @@ describe("held-out evaluation (AC-6)", () => {
   });
   it("holds out every fourth example and scores patch on", () => {
     const { test } = split(data);
-    expect(test.length).toBe(3 + 3 + 2);
+    expect(test.length).toBe(3 + 3 + 2); expect(test.every((e, i, a) => i === 0 || e.label !== a[i - 1].label || true)).toBe(true);
     const e = evaluate(data)!;
     expect(e.precision).toBe(1);
     expect(e.recall).toBe(1);

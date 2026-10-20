@@ -17,7 +17,14 @@ function fmt(min: number) {
 }
 
 export const App = () => {
-  const {code, view, error} = useTvSession();
+  const {code, view, error, lastOk} = useTvSession();
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  // No successful poll for 4 s: the TV can't know the patch is on, so it pauses.
+  const offline = !!view && now - lastOk > 4000;
   const video = useRef<any>(null);
   const [ready, setReady] = useState(false);
   const [pauseNote, setPauseNote] = useState('');
@@ -26,9 +33,9 @@ export const App = () => {
 
   const phase: Phase = !view?.paired
     ? 'pairing'
-    : view.playable
+    : view.playable && !offline
     ? 'playing'
-    : view.stale
+    : view.stale || offline
     ? 'paused-stale'
     : view.flag.cls === 'covered'
     ? 'paused-covered'
@@ -71,6 +78,17 @@ export const App = () => {
     }
     wasPlaying.current = phase === 'playing';
   }, [phase, ready, view]);
+
+  // If the player stalled or refused play() while the patch is on, ask again.
+  useEffect(() => {
+    const t = setInterval(() => {
+      const v = video.current;
+      if (v && lastPhase.current === 'playing' && v.paused) {
+        v.play();
+      }
+    }, 2000);
+    return () => clearInterval(t);
+  }, []);
 
   // Debug line: the player's clock, read once a second.
   useEffect(() => {
