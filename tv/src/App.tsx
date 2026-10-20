@@ -3,7 +3,7 @@ import {Image, StyleSheet, Text, View} from 'react-native';
 import {Video} from '@amazon-devices/react-native-w3cmedia';
 import {PatchRing} from './PatchRing';
 import {useTvSession} from './session';
-import {API, VIDEO_CREDIT, VIDEO_URL} from './config';
+import {API, SHOW_PLAYER_CLOCK, VIDEO_CREDIT, VIDEO_URL} from './config';
 import {C} from './theme';
 
 type Phase = 'pairing' | 'playing' | 'paused-off' | 'paused-stale' | 'paused-covered';
@@ -38,7 +38,7 @@ export const App = () => {
   useEffect(() => {
     if (video.current && !ready) {
       const v = video.current;
-      ['loadedmetadata', 'playing', 'pause', 'error', 'waiting', 'canplay'].forEach((ev) =>
+      ['loadedmetadata', 'playing', 'pause', 'error', 'waiting', 'canplay', 'timeupdate'].forEach((ev) =>
         v.addEventListener(ev, () => setMedia(`${ev} ${v.error ? 'err ' + v.error.code + ' ' + (v.error.message ?? '') : ''} t=${Math.round(v.currentTime ?? 0)} src=${String(v.currentSrc ?? v.src).slice(0, 60)}`)),
       );
       v.src = VIDEO_URL;
@@ -47,12 +47,14 @@ export const App = () => {
     }
   }, [ready]);
 
-  // Play or pause the reward strictly by the session state.
+  // Play or pause the reward strictly by the session state, only when the state changes.
+  const lastPhase = useRef<Phase | null>(null);
   useEffect(() => {
     const v = video.current;
-    if (!v || !ready) {
+    if (!v || !ready || lastPhase.current === phase) {
       return;
     }
+    lastPhase.current = phase;
     if (phase === 'playing') {
       v.play();
       setPauseNote('');
@@ -69,6 +71,17 @@ export const App = () => {
     }
     wasPlaying.current = phase === 'playing';
   }, [phase, ready, view]);
+
+  // Debug line: the player's clock, read once a second.
+  useEffect(() => {
+    const t = setInterval(() => {
+      const v = video.current;
+      if (v) {
+        setMedia((m) => m.replace(/t=\d+/, `t=${Math.round(v.currentTime ?? 0)}`));
+      }
+    }, 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const minutes = (view?.today.verifiedSec ?? 0) / 60;
   const prescribed = view?.prescribedMin ?? 120;
@@ -133,7 +146,7 @@ export const App = () => {
         </View>
         {error && <Text style={styles.err}>Can&apos;t reach Patch Hours. Retrying…</Text>}
         <Text style={styles.credit}>{VIDEO_CREDIT}</Text>
-        {media !== '' && <Text style={styles.media}>{media}</Text>}
+        {SHOW_PLAYER_CLOCK && media !== '' && <Text style={styles.media}>{media}</Text>}
       </View>
     </View>
   );
