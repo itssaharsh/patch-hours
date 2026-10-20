@@ -10,11 +10,13 @@ type Phase = "pairing" | "playing" | "paused-off" | "paused-stale" | "paused-cov
 export function TvScreen({ initialCode }: { initialCode?: string | null }) {
   const [code, setCode] = useState<string | null>(initialCode ?? null);
   const [forceState, setForceState] = useState<string | null>(null);
+  const [queryRead, setQueryRead] = useState(false);
   // ?code= pins a pairing code, ?state= forces a screen state for review.
   useEffect(() => {
     const q = new URLSearchParams(location.search);
     const c = q.get("code"); if (c) setCode(c.toUpperCase());
     setForceState(q.get("state"));
+    setQueryRead(true);
   }, []);
   const [qr, setQr] = useState<string>("");
   const [started, setStarted] = useState(false);
@@ -30,7 +32,7 @@ export function TvScreen({ initialCode }: { initialCode?: string | null }) {
   // A TV gets its own pairing code; it survives a reload. A code the server no longer knows is replaced once.
   const creating = useRef(false);
   useEffect(() => {
-    if (code && !missing) return;
+    if (!queryRead || (code && !missing)) return;
     if (missing) localStorage.removeItem("ph.tv.code");
     const saved = !missing ? localStorage.getItem("ph.tv.code") : null;
     if (saved) { setCode(saved); return; }
@@ -40,7 +42,7 @@ export function TvScreen({ initialCode }: { initialCode?: string | null }) {
       .then((s) => { localStorage.setItem("ph.tv.code", s.code); setCode(s.code); })
       .catch(() => setTimeout(() => setCode(null), 3000))
       .finally(() => { creating.current = false; });
-  }, [code, missing]);
+  }, [code, missing, queryRead]);
 
   useEffect(() => {
     if (!code) return;
