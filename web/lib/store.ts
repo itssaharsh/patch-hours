@@ -1,7 +1,5 @@
-import { Redis } from "@upstash/redis";
+import { neon } from "@neondatabase/serverless";
 import type { Session } from "./types";
-
-const TTL_S = 30 * 24 * 3600;
 
 export interface Store {
   get(code: string): Promise<Session | null>;
@@ -16,23 +14,36 @@ class MemoryStore implements Store {
   async create(s: Session) { if (this.m.has(s.code)) return false; this.m.set(s.code, s); return true; }
 }
 
-class RedisStore implements Store {
-  constructor(private r: Redis) {}
-  async get(code: string) { return (await this.r.get<Session>(`s:${code}`)) ?? null; }
-  async put(s: Session) { await this.r.set(`s:${s.code}`, s, { ex: TTL_S }); }
-  async create(s: Session) { return (await this.r.set(`s:${s.code}`, s, { ex: TTL_S, nx: true })) === "OK"; }
+// One row per pairing code; sessions older than 30 days are deleted on create.
+class PgStore implements Store {
+  private sql: ReturnType<typeof neon>;
+  private ready: Promise<unknown>;
+  constructor(url: string) {
+    this.sql = neon(url);
+    this.ready = this.sql`create table if not exists ph_sessions (code text primary key, data jsonb not null, updated timestamptz not null default now())`;
+  }
+  async get(code: string) {
+    await this.ready;
+    const rows = (await this.sql`select data from ph_sessions where code = ${code}`) as { data: Session }[];
+    return rows[0]?.data ?? null;
+  }
+  async put(s: Session) {
+    await this.ready;
+    await this.sql`update ph_sessions set data = ${JSON.stringify(s)}::jsonb, updated = now() where code = ${s.code}`;
+  }
+  async create(s: Session) {
+    await this.ready;
+    await this.sql`delete from ph_sessions where updated < now() - interval '30 days'`;
+    const rows = (await this.sql`insert into ph_sessions (code, data) values (${s.code}, ${JSON.stringify(s)}::jsonb) on conflict do nothing returning code`) as unknown[];
+    return rows.length === 1;
+  }
 }
 
 const g = globalThis as unknown as { __patchStore?: Store };
 
 export function store(): Store {
   if (g.__patchStore) return g.__patchStore;
-  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
-  g.__patchStore = url && token ? new RedisStore(new Redis({ url, token })) : new MemoryStore();
+  const url = process.env.DATABASE_URL;
+  g.__patchStore = url && process.env.NODE_ENV !== "test" ? new PgStore(url) : new MemoryStore();
   return g.__patchStore;
-}
-
-export function storeKind(): "redis" | "memory" {
-  return store() instanceof RedisStore ? "redis" : "memory";
 }
