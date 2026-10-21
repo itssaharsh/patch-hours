@@ -1,6 +1,6 @@
 # Friction log: Vega SDK 0.24 and the Vega Virtual Device
 
-Built on Ubuntu 24.04 under WSL2 (Windows 11), 16 cores, 7.7 GB RAM, SDK 0.24.12112, Vega CLI 1.4.5, 20 to 21 October 2026.
+Built on Ubuntu 24.04 under WSL2 (Windows 11), 16 cores, 7.7 GB RAM, SDK 0.24.12112, Vega CLI 1.4.5, 20 to 21 October 2026. Entries are in the order we hit them.
 Each entry: task · steps · expected vs actual · severity · workaround · suggestion.
 
 ## 1. The virtual device times out with no error on the console
@@ -82,3 +82,20 @@ Each entry: task · steps · expected vs actual · severity · workaround · sug
 - **Severity:** high (the reward video looks frozen in every demo).
 - **Workaround:** for the simulator, serve a copy of the clip with no audio track (`ffmpeg -c:v copy -an`); the clock then advances in real time, pauses and resumes. A physical Fire TV is not affected as far as we know.
 - **Suggestion:** fall back to the system clock when the audio sink stops advancing, or log a clear "audio output stalled" error.
+
+## 12. After a WSL restart the device dies at boot, again with only the deadline message
+- **Task:** start the virtual device the next day.
+- **Steps:** `vega virtual-device start`.
+- **Expected:** the device boots, or the CLI says why not.
+- **Actual:** "Deadline reached (60s) but virtual device unresponsive." `virtual_device.err` had `libc++abi: terminating due to uncaught exception of type std::__1::__fs::filesystem::filesystem_error: filesystem error: in create_directories: Permission denied ["/run/user/1000"]`. `XDG_RUNTIME_DIR` still pointed at `/run/user/1000/`, which WSL had not recreated.
+- **Severity:** high (same silent timeout as entry 1; looks like the earlier fixes stopped working).
+- **Workaround:** `export XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir`, then start again.
+- **Suggestion:** fall back to a temporary runtime directory, or print the emulator's last fatal line when the deadline passes.
+
+## 13. Console capture fails silently in small ways
+- **Task:** script screenshots and recordings through the emulator console (entry 10).
+- **Actual:** `screenrecord screenshot <dir>` replies `OK` and writes nothing when `<dir>` doesn't exist; relative paths resolve against the directory the device was started from; a path with a space is split into two arguments; `hw.cpu.ncore = 8` is quietly lowered to 6 ("Emualtor does not support more than 6 cores", only in `virtual_device.err`).
+- **Severity:** low.
+- **Suggestion:** reply `KO` when nothing was written, and document the 6-core cap next to the `config.ini` settings.
+
+We packaged the checks from entries 1, 2, 6 and 12 and the capture workaround from entries 10 and 13 as an open-source tool for other Vega builders: [vvd-kit](https://github.com/itssaharsh/vvd-kit) (`npx github:itssaharsh/vvd-kit doctor`).
