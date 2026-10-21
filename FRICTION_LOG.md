@@ -60,8 +60,18 @@ Each entry: task · steps · expected vs actual · severity · workaround · sug
 - **Severity:** low.
 - **Suggestion:** say the logical size near the top of the layout guide.
 
-## 9. Screen captures of the window show the video area black
-- **Task:** take stills for the submission.
-- **Actual:** an X11 grab of the device window shows the app UI but not video frames (they are on a separate surface).
+## 9. The video was playing but never visible
+- **Task:** show the reward video under the app's UI.
+- **Steps:** a `Video` component inside a `View` with a dark background colour; dim it with `opacity` when paused.
+- **Expected:** frames on screen; dimming works.
+- **Actual:** the player fired `playing` and its clock advanced, but the area stayed black, also in the emulator's own screenshot. The video draws on a plane under the UI, so any opaque background over it hides it, and `opacity` on `Video` does nothing.
+- **Severity:** high (cost two hours; looks like a decode failure).
+- **Workaround:** keep every view over the video transparent, paint the page colour around the video window in separate views, and dim with a semi-transparent scrim view on top.
+- **Suggestion:** one sentence in the `Video` README: "video renders below the React Native layer; keep views above it transparent".
+
+## 10. No screenshot command for the virtual device
+- **Task:** take stills and a recording for the submission.
+- **Actual:** an X11 grab of the window shows the UI but not the video plane; `vega device` has no screenshot command.
 - **Severity:** low.
-- **Suggestion:** a `vega device screenshot` command.
+- **Workaround:** the emulator console on port 5554 (`auth <token>`, then `screenrecord screenshot <dir>` or `screenrecord start <file>.webm`) captures the composed screen, video included.
+- **Suggestion:** wrap it as `vega device screenshot` and `vega device screenrecord`.

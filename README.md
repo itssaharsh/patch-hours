@@ -2,10 +2,13 @@
 
 **The show plays only while the eye patch is on.** A Fire TV app and a phone check for children patching for amblyopia (lazy eye): the cartoon pauses when the patch comes off, and the minutes the phone saw the patch on are counted.
 
-![Patch Hours on the Vega Virtual Device: the show paused, "Patch back on to keep watching", paused 0.5 s after the patch came off](docs/img/vega-paused.png)
 
 - **Live:** https://patch-hours.vercel.app (the TV screen in a browser, with a scripted run for judges without a phone)
 - **Phone check:** https://patch-hours.vercel.app/check
+
+| Patch on: the show plays | Patch off: the show pauses |
+|---|---|
+| ![Playing on the Vega Virtual Device](docs/img/vega-playing.png) | ![Paused on the Vega Virtual Device](docs/img/vega-paused.png) |
 
 ## Why
 
