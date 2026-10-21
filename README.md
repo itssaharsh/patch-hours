@@ -2,7 +2,7 @@
 
 **The show plays only while the eye patch is on.** A Fire TV app and a phone check for children patching for amblyopia (lazy eye): the cartoon pauses when the patch comes off, and the minutes the phone saw the patch on are counted.
 
-
+- **Video (2:43):** https://youtu.be/g5KP7FcY02Q
 - **Live:** https://patch-hours.vercel.app (the TV screen in a browser, with a scripted run for judges without a phone)
 - **Phone check:** https://patch-hours.vercel.app/check
 
