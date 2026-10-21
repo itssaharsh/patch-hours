@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Patch Hours on AWS: the week note for the eye clinic (Amazon Bedrock, Nova 2 Lite),
+  a guardrail on everything shown to parents or spoken to the child (Bedrock Guardrails),
+  the child's spoken cheer (Amazon Polly) and a private bucket for the voice clips (Amazon S3).
+  The web app on Vercel signs in with its own short-lived OIDC token (no stored AWS keys).
+  Deploy in us-east-1:
+    aws cloudformation deploy --region us-east-1 --stack-name patch-hours
+      --template-file aws/patch-hours.yaml --capabilities CAPABILITY_NAMED_IAM
+
+Parameters:
+  VercelTeamSlug:
+    Type: String
+    Default: lack-toes
+    Description: Vercel team slug (the OIDC issuer is https://oidc.vercel.com/<slug>)
+  VercelProject:
+    Type: String
+    Default: patch-hours
+
+Resources:
+  # Lets Vercel deployments of this project exchange their OIDC token for AWS credentials.
+  VercelOidc:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: !Sub https://oidc.vercel.com/${VercelTeamSlug}
+      ClientIdList:
+        - !Sub https://vercel.com/${VercelTeamSlug}
+
+  # Voice clips (the child's cheer). Private; the app hands out short-lived links. Gone after 30 days, like pairing codes.
+  VoiceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub patch-hours-voice-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-voice
+            Status: Enabled
+            Prefix: voice/
+            ExpirationInDays: 30
+
+  # Every generated text passes this before a parent reads it or a child hears it.
+  Guardrail:
+    Type: AWS::Bedrock::Guardrail
+    Properties:
+      Name: patch-hours-notes
+      Description: Week notes for the eye clinic and cheers spoken to a young child.
+      BlockedInputMessaging: This request was blocked.
+      BlockedOutputsMessaging: This text was blocked.
+      ContentPolicyConfig:
+        FiltersConfig:
+          - { Type: SEXUAL, InputStrength: HIGH, OutputStrength: HIGH }
+          - { Type: VIOLENCE, InputStrength: HIGH, OutputStrength: HIGH }
+          - { Type: HATE, InputStrength: HIGH, OutputStrength: HIGH }
+          - { Type: INSULTS, InputStrength: HIGH, OutputStrength: HIGH }
+          - { Type: MISCONDUCT, InputStrength: HIGH, OutputStrength: HIGH }
+          - { Type: PROMPT_ATTACK, InputStrength: HIGH, OutputStrength: NONE }
+      TopicPolicyConfig:
+        TopicsConfig:
+          - Name: Treatment changes
+            Type: DENY
+            Definition: Advice to start, stop, shorten, lengthen or otherwise change eye patching, glasses, eye drops or any other treatment.
+            Examples:
+              - You can stop patching now.
+              - Try patching for four hours a day instead.
+              - Skip the patch on weekends.
+      WordPolicyConfig:
+        ManagedWordListsConfig:
+          - Type: PROFANITY
+
+  GuardrailVersion:
+    Type: AWS::Bedrock::GuardrailVersion
+    Properties:
+      GuardrailIdentifier: !GetAtt Guardrail.GuardrailId
+      Description: v1
+
+  # Assumed only by this Vercel project's production and preview deployments.
+  AppRole:
+    Type: AWS::IAM::Role
+    DependsOn: VercelOidc
+    Properties:
+      RoleName: patch-hours-vercel
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {"Federated": "arn:aws:iam::${AWS::AccountId}:oidc-provider/oidc.vercel.com/${VercelTeamSlug}"},
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+              "StringEquals": {
+                "oidc.vercel.com/${VercelTeamSlug}:aud": "https://vercel.com/${VercelTeamSlug}",
+                "oidc.vercel.com/${VercelTeamSlug}:sub": [
+                  "owner:${VercelTeamSlug}:project:${VercelProject}:environment:production",
+                  "owner:${VercelTeamSlug}:project:${VercelProject}:environment:preview"
+                ]
+              }
+            }
+          }]
+        }
+      Policies:
+        - PolicyName: patch-hours-app
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: NovaOnly
+                Effect: Allow
+                Action: bedrock:InvokeModel
+                Resource:
+                  - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/us.amazon.nova-2-lite-v1:0
+                  - arn:aws:bedrock:*::foundation-model/amazon.nova-2-lite-v1:0
+              - Sid: ThisGuardrail
+                Effect: Allow
+                Action: bedrock:ApplyGuardrail
+                Resource: !GetAtt Guardrail.GuardrailArn
+              - Sid: Speak
+                Effect: Allow
+                Action: polly:SynthesizeSpeech
+                Resource: "*"
+              - Sid: VoiceClips
+                Effect: Allow
+                Action: [s3:PutObject, s3:GetObject]
+                Resource: !Sub ${VoiceBucket.Arn}/voice/*
+
+Outputs:
+  RoleArn:
+    Value: !GetAtt AppRole.Arn
+  VoiceBucket:
+    Value: !Ref VoiceBucket
+  GuardrailId:
+    Value: !GetAtt Guardrail.GuardrailId
+  GuardrailVersion:
+    Value: !GetAtt GuardrailVersion.Version
