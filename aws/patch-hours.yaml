@@ -26,7 +26,7 @@ Resources:
       ClientIdList:
         - !Sub https://vercel.com/${VercelTeamSlug}
 
-  # Voice clips (the child's cheer). Private; the app hands out short-lived links. Gone after 30 days, like pairing codes.
+  # Voice clips (the child's cheer). Private; the app reads them and serves them itself. Gone after 30 days, like pairing codes.
   VoiceBucket:
     Type: AWS::S3::Bucket
     Properties:
