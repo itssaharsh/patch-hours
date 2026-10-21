@@ -71,7 +71,7 @@ export function WeekApp() {
       {v && (
         <section aria-labelledby="clinic" style={{ marginTop: 36, borderTop: "1px solid var(--line)", paddingTop: 20 }}>
           <h2 id="clinic" style={{ fontSize: 26, margin: "0 0 4px" }}>Note for the eye clinic</h2>
-          <p className="muted" style={{ marginTop: 0 }}>Made from the table above. Amazon Nova phrases it; every number is checked against the table and the text passes a guardrail before you see it. The short cheer is spoken on the TV the next time the patch goes on.</p>
+          <p className="muted" style={{ marginTop: 0 }}>Made from the table above. Amazon Nova phrases it; every number is checked against the table and the text passes a guardrail before you see it. The short cheer is spoken on the web TV the next time the patch goes on.</p>
           <button className="btn" onClick={writeNote} aria-disabled={noteBusy} disabled={noteBusy}>{noteBusy ? "Writing…" : note ? "Write it again" : "Write this week's note"}</button>
           {noteErr && <p role="alert" style={{ color: "var(--off)" }}>{noteErr}</p>}
           {note && (
