@@ -32,16 +32,16 @@ export function WeekApp() {
           <table className="num" style={{ width: "100%", borderCollapse: "collapse", fontSize: 16 }}>
             <caption id="wk" className="sr">Patching minutes per day</caption>
             <thead><tr style={{ textAlign: "right", color: "var(--ink-muted)" }}>
-              <th style={{ textAlign: "left", padding: "8px 0" }}>Day</th><th>Seen by the camera</th><th>Added by you</th><th>Prescribed</th></tr></thead>
+              <th style={{ textAlign: "left", padding: "8px 0" }}>Day</th><th>Seen by the camera (min)</th><th>Added by you (min)</th><th>Prescribed (min)</th></tr></thead>
             <tbody>{days.map((d) => (
               <tr key={d} style={{ borderTop: "1px solid var(--line)", textAlign: "right" }}>
                 <td style={{ textAlign: "left", padding: "10px 0" }}>{new Date(d + "T12:00").toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}</td>
-                <td style={{ color: "var(--data-patch)", fontWeight: 600 }}>{Math.floor((by[d]?.verifiedSec ?? 0) / 60)}</td>
-                <td>{Math.floor((by[d]?.attestedSec ?? 0) / 60)}</td>
+                <td style={{ color: "var(--data-patch)", fontWeight: 600 }}>{fmt(by[d]?.verifiedSec ?? 0)}</td>
+                <td>{fmt(by[d]?.attestedSec ?? 0)}</td>
                 <td className="muted">{v.prescribedMin}</td>
               </tr>))}</tbody>
             <tfoot><tr style={{ borderTop: "2px solid var(--line-input)", textAlign: "right", fontWeight: 600 }}>
-              <td style={{ textAlign: "left", padding: "10px 0" }}>Week</td><td>{Math.floor(total("verifiedSec"))}</td><td>{Math.floor(total("attestedSec"))}</td><td className="muted">{v.prescribedMin * 7}</td></tr></tfoot>
+              <td style={{ textAlign: "left", padding: "10px 0" }}>Week</td><td>{fmt(total("verifiedSec") * 60)}</td><td>{fmt(total("attestedSec") * 60)}</td><td className="muted">{v.prescribedMin * 7}</td></tr></tfoot>
           </table>
         </div>
       )}
@@ -49,4 +49,11 @@ export function WeekApp() {
       {code && <p style={{ marginTop: 24 }}><a href={`/check?code=${code}`}>Back to the phone check</a></p>}
     </main>
   );
+}
+
+// Minutes; under ten minutes shown as m:ss so a short session is visible.
+function fmt(sec: number) {
+  const s = Math.floor(sec);
+  if (s >= 600) return String(Math.floor(s / 60));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
