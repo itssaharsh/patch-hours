@@ -3,8 +3,17 @@ import { useEffect, useState } from "react";
 import { today } from "@/lib/client";
 import type { SessionView } from "@/lib/types";
 
+interface Note {
+  note: string; cheer: string; source: "nova" | "template"; model?: string; voiceUrl?: string; cached?: boolean;
+  checks: { numbers: string; guardrail: string; why?: string };
+}
+
 export function WeekApp() {
   const [v, setV] = useState<SessionView | null>(null);
+  const [note, setNote] = useState<Note | null>(null);
+  const [noteBusy, setNoteBusy] = useState(false);
+  const [noteErr, setNoteErr] = useState("");
+  const [copied, setCopied] = useState(false);
   const [err, setErr] = useState("");
   const [code, setCode] = useState("");
   const [days, setDays] = useState<string[]>([]);
@@ -16,7 +25,20 @@ export function WeekApp() {
     fetch(`/api/session/${c}?day=${today()}`)
       .then(async (r) => r.ok ? setV(await r.json()) : setErr(r.status === 404 ? "That TV code isn't known. Open this page from the phone check." : "Couldn't load this TV's minutes."))
       .catch(() => setErr("Couldn't reach Patch Hours. Check the connection and reload."));
+    fetch(`/api/session/${c}/report`).then(async (r) => { if (r.ok) setNote(await r.json()); }).catch(() => {});
   }, []);
+  async function writeNote() {
+    setNoteBusy(true); setNoteErr(""); setCopied(false);
+    try {
+      const r = await fetch(`/api/session/${code}/report`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ to: today() }) });
+      if (!r.ok) throw new Error(String(r.status));
+      setNote(await r.json());
+    } catch {
+      setNoteErr("Couldn't write the note just now. Try again in a minute.");
+    } finally {
+      setNoteBusy(false);
+    }
+  }
   const by = Object.fromEntries((v?.days ?? []).map((d) => [d.day, d]));
   const total = (k: "verifiedSec" | "attestedSec") => days.reduce((n, d) => n + (by[d]?.[k] ?? 0), 0) / 60;
   return (
@@ -46,9 +68,35 @@ export function WeekApp() {
         </div>
       )}
       {v && v.days.length === 0 && <p className="muted">No sessions yet. Minutes appear here once the phone has checked a show.</p>}
+      {v && (
+        <section aria-labelledby="clinic" style={{ marginTop: 36, borderTop: "1px solid var(--line)", paddingTop: 20 }}>
+          <h2 id="clinic" style={{ fontSize: 26, margin: "0 0 4px" }}>Note for the eye clinic</h2>
+          <p className="muted" style={{ marginTop: 0 }}>Made from the table above. Amazon Nova phrases it; every number is checked against the table and the text passes a guardrail before you see it. The short cheer is spoken on the TV the next time the patch goes on.</p>
+          <button className="btn" onClick={writeNote} aria-disabled={noteBusy} disabled={noteBusy}>{noteBusy ? "Writing…" : note ? "Write it again" : "Write this week's note"}</button>
+          {noteErr && <p role="alert" style={{ color: "var(--off)" }}>{noteErr}</p>}
+          {note && (
+            <div aria-live="polite" style={{ marginTop: 16 }}>
+              <p style={{ fontSize: 18, lineHeight: 1.5, margin: "0 0 8px", padding: "12px 16px", background: "var(--surface-1)", borderRadius: 12 }}>{note.note}</p>
+              <button className="btn tonal" onClick={() => navigator.clipboard?.writeText(note.note).then(() => setCopied(true)).catch(() => {})}>{copied ? "Copied" : "Copy the note"}</button>
+              <p style={{ margin: "16px 0 4px" }}>For your child: <strong>&ldquo;{note.cheer}&rdquo;</strong></p>
+              {note.voiceUrl && <audio controls src={note.voiceUrl} style={{ width: "100%", maxWidth: 360 }} aria-label="The cheer, spoken" />}
+              <p className="muted" style={{ fontSize: 14 }}>{provenance(note)}</p>
+            </div>
+          )}
+        </section>
+      )}
       {code && <p style={{ marginTop: 24 }}><a href={`/check?code=${code}`}>Back to the phone check</a></p>}
     </main>
   );
+}
+
+function provenance(n: Note) {
+  const voice = n.voiceUrl ? " Voice: Amazon Polly." : "";
+  if (n.source === "nova") return `Phrased by Amazon Nova 2 Lite on Amazon Bedrock. Numbers checked against the table; guardrail ${n.checks.guardrail === "passed" ? "passed" : "not configured"}.${voice}`;
+  const why = n.checks.guardrail === "intervened" ? "the guardrail stopped Nova's wording"
+    : n.checks.numbers === "failed" ? "Nova's wording didn't pass the number check or Bedrock was unavailable"
+    : "the AWS services aren't configured here";
+  return `Plain template, because ${why}.${voice}`;
 }
 
 // Minutes; under ten minutes shown as m:ss so a short session is visible.

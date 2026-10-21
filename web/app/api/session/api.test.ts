@@ -65,3 +65,40 @@ describe("concurrent writes and carry-over (review M1, M2)", () => {
     expect(r.simulated).toBe(true);
   });
 });
+
+import { POST as reportRoute } from "./[code]/report/route";
+import { GET as voiceRoute } from "./[code]/voice/route";
+import { setAi } from "@/lib/aws";
+
+describe("week note API", () => {
+  it("makes a note once, returns it cached while the week is unchanged, and serves the cheer to the TV", async () => {
+    let writes = 0;
+    setAi({
+      write: async () => { writes++; return { texts: { note: "No camera minutes yet this week; the prescription is 120 minutes a day.", cheer: "Let's wear the patch and watch together!" }, model: "test" }; },
+      guard: async () => "passed",
+      speak: async () => new Uint8Array([1]),
+      putVoice: async () => {},
+      getVoice: async () => new Uint8Array([7, 7]),
+    });
+    try {
+      const s = await (await create(new Request("http://x", { method: "POST", body: "{}" }))).json();
+      const post = () => reportRoute(new Request("http://x", { method: "POST", body: JSON.stringify({ to: day }) }), ctx(s.code));
+      const a = await (await post()).json();
+      expect(a.source).toBe("nova");
+      expect(a.voiceUrl).toMatch(/^\/api\/session\/[A-Z2-9]{6}\/voice\?at=\d+$/);
+      const b = await (await post()).json();
+      expect(b.cached).toBe(true);
+      expect(writes).toBe(1);
+      const v = await voiceRoute(new Request("http://x"), ctx(s.code));
+      expect(v.status).toBe(200);
+      expect(v.headers.get("content-type")).toBe("audio/mpeg");
+      const g = await (await read(new Request(`http://x?day=${day}`), ctx(s.code))).json();
+      expect(g.cheerAt).toBeGreaterThan(0);
+      expect(g.report).toBeUndefined();
+      const bad = await reportRoute(new Request("http://x", { method: "POST", body: JSON.stringify({ to: "2020-01-01" }) }), ctx(s.code));
+      expect(bad.status).toBe(400);
+    } finally {
+      setAi(undefined);
+    }
+  });
+});

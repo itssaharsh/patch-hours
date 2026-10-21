@@ -104,6 +104,7 @@ export function view(s: Session, now: number, day: string): SessionView {
     lastSeen: s.lastSeen, changedAt: s.changedAt, playable,
     stale: s.lastSeen > 0 && now - s.lastSeen > STALE_MS, paired: s.lastSeen > 0, serverNow: now,
     today: { day, verifiedSec: t.verifiedSec + live, attestedSec: t.attestedSec }, days,
+    ...(s.report?.voiceKey ? { cheerAt: s.report.at } : {}),
   };
 }
 

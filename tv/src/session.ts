@@ -13,6 +13,7 @@ export interface SessionView {
   changedAt: number;
   flag: {on: boolean; cls: 'patch' | 'bare' | 'covered' | 'noface'; conf: number};
   today: {day: string; verifiedSec: number; attestedSec: number};
+  cheerAt?: number; // a new spoken cheer is ready (week note, web/lib/note.ts)
 }
 
 export function localDay(d = new Date()): string {

@@ -29,13 +29,28 @@ export interface Session {
   v?: number; // version, for safe concurrent updates
   simulated?: boolean; // any heartbeat came from the scripted run
   inherited?: string[]; // earlier codes whose minutes were carried over
+  report?: Report; // the latest week note and cheer
 }
 
-export interface SessionView extends Omit<Session, "days" | "v" | "inherited"> {
+/** The week note for the eye clinic and the cheer the TV says to the child (see lib/note.ts). */
+export interface Report {
+  at: number;
+  to: string; // last day of the week it covers
+  factsKey: string;
+  note: string;
+  cheer: string;
+  source: "nova" | "template";
+  model?: string;
+  checks: { numbers: "passed" | "failed" | "n/a"; guardrail: "passed" | "intervened" | "off"; why?: string };
+  voiceKey?: string; // S3 key of the spoken cheer
+}
+
+export interface SessionView extends Omit<Session, "days" | "v" | "inherited" | "report"> {
   playable: boolean;
   stale: boolean; // a phone was seen, but not in the last STALE_MS
   paired: boolean; // any heartbeat ever
   serverNow: number;
   today: DayTotals & { day: string };
   days: Array<DayTotals & { day: string }>;
+  cheerAt?: number; // set when a spoken cheer is ready; the TV plays it once
 }

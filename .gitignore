@@ -42,3 +42,6 @@ docs/memory/
 web/AGENTS.md
 web/README.md
 tv/generated/
+
+# zip output
+release/dist/

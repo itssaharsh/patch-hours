@@ -67,6 +67,35 @@ export function TvScreen({ initialCode }: { initialCode?: string | null }) {
     wasPlaying.current = phase === "playing";
   }, [phase, started, view]);
 
+  // Young children can't read the pause message, so the TV says it (a Polly clip). When a new week
+  // cheer exists, the TV says it once, the next time the patch goes on, with the show turned down.
+  const lastPhase = useRef<Phase>("pairing");
+  const voice = useRef<HTMLAudioElement | null>(null);
+  const cheerAt = view?.cheerAt;
+  useEffect(() => {
+    const prev = lastPhase.current;
+    lastPhase.current = phase;
+    if (!started || prev === phase || forceState) return;
+    const v = video.current;
+    const say = (src: string, duck: boolean) => {
+      voice.current?.pause();
+      const a = new Audio(src);
+      voice.current = a;
+      if (duck && v) { v.volume = 0.25; a.onended = a.onerror = () => { v.volume = 1; }; }
+      a.play().catch(() => { if (v) v.volume = 1; });
+    };
+    if (prev === "playing" && (phase === "paused-off" || phase === "paused-covered")) say("/voice/patch-back-on.mp3", false);
+    if (phase === "playing") {
+      voice.current?.pause();
+      if (code && cheerAt) {
+        const k = `ph.cheer.${code}`;
+        let heard: string | null = null;
+        try { heard = localStorage.getItem(k); localStorage.setItem(k, String(cheerAt)); } catch { /* private mode */ }
+        if (heard !== String(cheerAt)) say(`/api/session/${code}/voice`, true);
+      }
+    }
+  }, [phase, started, forceState, code, cheerAt]);
+
   const minutes = (view?.today.verifiedSec ?? 0) / 60;
   const prescribed = view?.prescribedMin ?? 120;
   const off = phase !== "playing" && phase !== "pairing";
