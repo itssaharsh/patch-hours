@@ -69,6 +69,9 @@ start_device() {
   fi
   bold "Starting the Vega Virtual Device (first boot takes a minute or two)"
   vega virtual-device start
+  # "ready" comes before the home screen; an app launched earlier can be lost.
+  echo "Waiting for the home screen…"
+  sleep 25
 }
 
 install_app() {
@@ -77,6 +80,8 @@ install_app() {
   bold "Installing and opening Patch Hours"
   vega run-app "$pkg" "$APP_ID"
   cat <<EOF
+
+If the TV shows "Your apps" instead, open Patch Hours there or run ./run.sh again.
 
 The TV now shows a six-letter pairing code.
   - With a phone: scan the QR code on the TV, or open $API/check and type the code.

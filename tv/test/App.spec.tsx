@@ -3,7 +3,7 @@ import React from 'react';
 import {render} from '@testing-library/react-native';
 import {App} from '../src/App';
 
-jest.mock('@amazon-devices/react-native-w3cmedia', () => ({Video: () => null, Audio: () => null}));
+jest.mock('@amazon-devices/react-native-w3cmedia', () => ({Video: () => null}));
 
 describe('App', () => {
   it('shows the pairing screen before a phone reports', () => {

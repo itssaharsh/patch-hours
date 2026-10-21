@@ -98,4 +98,13 @@ Each entry: task · steps · expected vs actual · severity · workaround · sug
 - **Severity:** low.
 - **Suggestion:** reply `KO` when nothing was written, and document the 6-core cap next to the `config.ini` settings.
 
+## 14. A second media player froze the app, and only the crash history said so
+- **Task:** speak "Patch back on, and your show comes back!" from an MP3 when the show pauses, for children too young to read.
+- **Steps:** mount the `Audio` component of `@amazon-devices/react-native-w3cmedia` next to the `Video` component; set `src` and call `play()` on pause.
+- **Expected:** the clip plays, or an error event.
+- **Actual:** on the virtual device under WSL2 the speakers gave short "ting" sounds a couple of seconds apart, and within a minute the app vanished back to "Your apps", sometimes before any clip had played. The app's log was empty. `vlcm crash-history` (run with `vega device run-cmd`) had the reason: `LCM_KILLREASON: AppNotResponding`, `LCM_ANR_THREAD_NAME: JSReactThread`.
+- **Severity:** high (the app silently disappears; nothing in the CLI output).
+- **Workaround:** no `Audio` player in the Vega app; the prompt stays on screen there, and the web TV says it aloud.
+- **Suggestion:** surface ANR kills in `vega run-app` / the CLI, mention `vlcm crash-history` in the debugging docs, and keep a stalled audio sink from blocking the JS thread.
+
 We packaged the checks from entries 1, 2, 6 and 12 and the capture workaround from entries 10 and 13 as an open-source tool for other Vega builders: [vvd-kit](https://github.com/itssaharsh/vvd-kit) (`npx github:itssaharsh/vvd-kit doctor`).

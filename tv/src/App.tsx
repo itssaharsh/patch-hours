@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Dimensions, Image, StyleSheet, Text, View} from 'react-native';
-import {Audio, Video} from '@amazon-devices/react-native-w3cmedia';
+import {Video} from '@amazon-devices/react-native-w3cmedia';
 import {PatchRing} from './PatchRing';
 import {useTvSession} from './session';
 import {API, SHOW_PLAYER_CLOCK, VIDEO_CREDIT, VIDEO_URL} from './config';
@@ -105,42 +105,6 @@ export const App = () => {
     wasPlaying.current = phase === 'playing';
   }, [phase, ready, view]);
 
-  // Young children can't read the pause message, so the TV says it (a Polly clip). A new week
-  // cheer is said once, the next time the patch goes on, with the show turned down.
-  const voice = useRef<any>(null);
-  const spoken = useRef<{phase: Phase | null; cheerAt: number}>({phase: null, cheerAt: 0});
-  const cheerAt = view?.cheerAt ?? 0;
-  useEffect(() => {
-    const a = voice.current;
-    const prev = spoken.current.phase;
-    spoken.current.phase = phase;
-    if (!a || !ready || prev === phase) {
-      return;
-    }
-    const say = (url: string, duck: boolean) => {
-      const v = video.current;
-      try {
-        a.pause();
-        a.src = url;
-        if (duck && v) {
-          v.volume = 0.25;
-        }
-        const p = a.play();
-        if (p && p.catch) {
-          p.catch(() => {});
-        }
-      } catch (e) {
-        // no voice is fine; the words are on screen
-      }
-    };
-    if (prev === 'playing' && (phase === 'paused-off' || phase === 'paused-covered')) {
-      say(`${API}/voice/patch-back-on.mp3`, false);
-    } else if (phase === 'playing' && code && cheerAt && cheerAt !== spoken.current.cheerAt) {
-      spoken.current.cheerAt = cheerAt;
-      say(`${API}/api/session/${code}/voice?at=${cheerAt}`, true);
-    }
-  }, [phase, ready, code, cheerAt]);
-
   // Debug line: the player's clock, read once a second.
   useEffect(() => {
     if (!SHOW_PLAYER_CLOCK) {
@@ -181,18 +145,6 @@ export const App = () => {
               }}
               style={styles.video}
             />
-            <Audio
-              ref={(r: any) => {
-                if (r && !voice.current) {
-                  voice.current = r;
-                  r.addEventListener('ended', () => {
-                    if (video.current) {
-                      video.current.volume = 1;
-                    }
-                  });
-                }
-              }}
-            />
             {phase !== 'playing' && (
               <View
                 style={[
@@ -223,6 +175,8 @@ export const App = () => {
                 </View>
               </View>
             )}
+            {/* The web TV also says this prompt aloud. Here it stays text: the w3cmedia Audio
+                player froze the JS thread on the virtual device (FRICTION_LOG.md 14). */}
             {off && (
               <View style={styles.overlay}>
                 <Text style={styles.prompt}>
