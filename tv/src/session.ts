@@ -8,6 +8,7 @@ export interface SessionView {
   playable: boolean;
   stale: boolean;
   paired: boolean;
+  simulated?: boolean;
   serverNow: number;
   changedAt: number;
   flag: {on: boolean; cls: 'patch' | 'bare' | 'covered' | 'noface'; conf: number};

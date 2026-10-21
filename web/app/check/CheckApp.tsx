@@ -48,18 +48,31 @@ export function CheckApp() {
   }, []);
   useEffect(() => {
     if (!code) return;
-    fetch(`/api/session/${code}?day=${today()}`).then(async (r) => {
-      if (!r.ok) { setNote(r.status === 404 ? "That code isn't a TV we know. Check the code on the TV screen." : "Can't reach Patch Hours."); setPhase("need-code"); return; }
-      const v = (await r.json()) as SessionView; setSession(v); setEye(v.eye);
-    });
+    (async () => {
+      try {
+        const r = await fetch(`/api/session/${code}?day=${today()}`);
+        if (!r.ok) { setNote(r.status === 404 ? "That code isn't a TV we know. Check the code on the TV screen." : "Can't reach Patch Hours. Check the connection and reload."); setPhase("need-code"); return; }
+        let v = (await r.json()) as SessionView;
+        // A TV restart makes a new code: carry this phone's earlier minutes and settings over to it, once.
+        const last = localStorage.getItem("ph.lastCode");
+        if (last && last !== code) {
+          const ir = await fetch(`/api/session/${code}/inherit?day=${today()}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ from: last }) });
+          if (ir.ok) v = await ir.json();
+        }
+        localStorage.setItem("ph.lastCode", code);
+        setSession(v); setEye(v.eye);
+      } catch {
+        setNote("Can't reach Patch Hours. Check the connection and reload."); setPhase("need-code");
+      }
+    })();
   }, [code]);
   useEffect(() => {
     if (!code) return;
-    try { const saved = localStorage.getItem(`ph.cal.${code}.${eye}`); setExamples(saved ? JSON.parse(saved) : []); } catch { setExamples([]); }
+    try { const saved = localStorage.getItem(`ph.cal.${eye}`); setExamples(saved ? JSON.parse(saved) : []); } catch { setExamples([]); }
   }, [code, eye]);
   useEffect(() => {
     if (!code) return;
-    try { localStorage.setItem(`ph.cal.${code}.${eye}`, JSON.stringify(examples)); } catch { /* storage full: keep in memory */ }
+    try { localStorage.setItem(`ph.cal.${eye}`, JSON.stringify(examples)); } catch { /* storage full: keep in memory */ }
   }, [examples, code, eye]);
 
   const send = useCallback(async (hb: { on: boolean; cls: PatchClass; conf: number; lagMs: number }) => {
@@ -137,14 +150,18 @@ export function CheckApp() {
 
   const setEyeRemote = async (e: "L" | "R") => {
     setEye(e); setChecking(false);
-    const r = await fetch(`/api/session/${code}?day=${today()}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ eye: e }) });
-    if (r.ok) setSession(await r.json());
+    try {
+      const r = await fetch(`/api/session/${code}?day=${today()}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ eye: e }) });
+      if (r.ok) setSession(await r.json()); else setNote("Couldn't save the patched eye. Try again.");
+    } catch { setNote("Couldn't save the patched eye. Check the connection."); }
   };
   const attest = async () => {
     const m = Number(attestMin);
-    const r = await fetch(`/api/session/${code}/attest`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ day: today(), minutes: m }) });
-    if (r.ok) { setSession(await r.json()); setAttestMin(""); setNote(`Added ${m} min, kept apart from the minutes the camera saw.`); }
-    else setNote("Minutes must be between 1 and 240.");
+    try {
+      const r = await fetch(`/api/session/${code}/attest`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ day: today(), minutes: m }) });
+      if (r.ok) { setSession(await r.json()); setAttestMin(""); setNote(`Added ${m} min, kept apart from the minutes the camera saw.`); }
+      else setNote(r.status === 409 ? "Busy. Press Add minutes again." : "Minutes must be between 1 and 240.");
+    } catch { setNote("Couldn't add the minutes. Check the connection."); }
   };
 
   const ev = evaluate(examples);

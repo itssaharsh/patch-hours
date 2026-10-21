@@ -26,3 +26,4 @@
 .dot { width: .9cqi; height: .9cqi; border-radius: 50%; background: currentColor; }
 .err { color: var(--off); font-size: 1.2cqi; margin: 0; }
 .credit { font-size: 1cqi; color: var(--ink-muted); margin: auto 0 0; }
+.sim { margin: 0; font-size: 1.1cqi; color: var(--accent); }

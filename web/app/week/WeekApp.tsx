@@ -13,7 +13,9 @@ export function WeekApp() {
     setCode(c);
     setDays(Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return today(d); }));
     if (!c) { setErr("Open this page from the phone check, or add ?code= with the TV code."); return; }
-    fetch(`/api/session/${c}?day=${today()}`).then(async (r) => r.ok ? setV(await r.json()) : setErr("Couldn't load this TV's minutes."));
+    fetch(`/api/session/${c}?day=${today()}`)
+      .then(async (r) => r.ok ? setV(await r.json()) : setErr(r.status === 404 ? "That TV code isn't known. Open this page from the phone check." : "Couldn't load this TV's minutes."))
+      .catch(() => setErr("Couldn't reach Patch Hours. Check the connection and reload."));
   }, []);
   const by = Object.fromEntries((v?.days ?? []).map((d) => [d.day, d]));
   const total = (k: "verifiedSec" | "attestedSec") => days.reduce((n, d) => n + (by[d]?.[k] ?? 0), 0) / 60;
@@ -21,7 +23,8 @@ export function WeekApp() {
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px 48px" }}>
       <p className="display" style={{ color: "var(--accent)", fontSize: 24, margin: 0 }}>Patch Hours</p>
       <h1 style={{ fontSize: 40, margin: "8px 0 4px" }}>Minutes this week</h1>
-      <p className="muted" style={{ marginTop: 0 }}>TV {code}. The camera&apos;s minutes and the minutes you added are kept apart, so the clinic sees both.</p>
+      <p className="muted" style={{ marginTop: 0 }}>{code && <>TV {code}. </>}The camera&apos;s minutes and the minutes you added are kept apart, so the clinic sees both.</p>
+      {v?.simulated && <p role="note" style={{ color: "var(--accent)" }}>Some of these minutes came from the scripted run on the home page, not from a camera.</p>}
       {err && <p role="alert" style={{ color: "var(--off)" }}>{err}</p>}
       {!err && !v && <p className="muted">Loading…</p>}
       {v && (
@@ -43,7 +46,7 @@ export function WeekApp() {
         </div>
       )}
       {v && v.days.length === 0 && <p className="muted">No sessions yet. Minutes appear here once the phone has checked a show.</p>}
-      <p style={{ marginTop: 24 }}><a href={`/check?code=${code}`}>Back to the phone check</a></p>
+      {code && <p style={{ marginTop: 24 }}><a href={`/check?code=${code}`}>Back to the phone check</a></p>}
     </main>
   );
 }

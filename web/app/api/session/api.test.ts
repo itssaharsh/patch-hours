@@ -31,3 +31,37 @@ describe("session API round trip (AC-1..AC-3, AC-8)", () => {
     expect(nf.status).toBe(404);
   });
 });
+
+import { POST as attestRoute } from "./[code]/attest/route";
+import { POST as inheritRoute } from "./[code]/inherit/route";
+import { store } from "@/lib/store";
+
+describe("concurrent writes and carry-over (review M1, M2)", () => {
+  it("never loses attested minutes sent during heartbeats", async () => {
+    const s = await (await create(new Request("http://x", { method: "POST", body: "{}" }))).json();
+    const hb = () => flag(new Request("http://x", { method: "POST", body: JSON.stringify({ on: true, cls: "patch", conf: 1, day }) }), ctx(s.code));
+    const at = () => attestRoute(new Request("http://x", { method: "POST", body: JSON.stringify({ day, minutes: 10 }) }), ctx(s.code));
+    await Promise.all([hb(), at(), hb(), at(), at()]);
+    const after = await store().get(s.code);
+    expect(after!.days[day].attestedSec).toBe(30 * 60);
+  });
+
+  it("carries an earlier code's minutes into a new pairing once", async () => {
+    const a = await (await create(new Request("http://x", { method: "POST", body: JSON.stringify({ prescribedMin: 90, eye: "L" }) }))).json();
+    await attestRoute(new Request("http://x", { method: "POST", body: JSON.stringify({ day, minutes: 15 }) }), ctx(a.code));
+    const b = await (await create(new Request("http://x", { method: "POST", body: "{}" }))).json();
+    const body = JSON.stringify({ from: a.code });
+    const r1 = await (await inheritRoute(new Request("http://x", { method: "POST", body }), ctx(b.code))).json();
+    await inheritRoute(new Request("http://x", { method: "POST", body }), ctx(b.code));
+    const after = await store().get(b.code);
+    expect(after!.days[day].attestedSec).toBe(15 * 60);
+    expect(r1.prescribedMin).toBe(90);
+    expect(r1.eye).toBe("L");
+  });
+
+  it("marks a session fed by the scripted run as simulated", async () => {
+    const s = await (await create(new Request("http://x", { method: "POST", body: "{}" }))).json();
+    const r = await (await flag(new Request("http://x", { method: "POST", body: JSON.stringify({ on: true, cls: "patch", conf: 1, day, sim: true }) }), ctx(s.code))).json();
+    expect(r.simulated).toBe(true);
+  });
+});

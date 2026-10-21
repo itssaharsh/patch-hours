@@ -45,7 +45,7 @@ export const App = () => {
   useEffect(() => {
     if (video.current && !ready) {
       const v = video.current;
-      ['loadedmetadata', 'playing', 'pause', 'error', 'waiting', 'canplay', 'timeupdate'].forEach((ev) =>
+      (SHOW_PLAYER_CLOCK ? ['loadedmetadata', 'playing', 'pause', 'error', 'waiting', 'canplay', 'timeupdate'] : []).forEach((ev) =>
         v.addEventListener(ev, () => setMedia(`${ev} ${v.error ? 'err ' + v.error.code + ' ' + (v.error.message ?? '') : ''} t=${Math.round(v.currentTime ?? 0)} src=${String(v.currentSrc ?? v.src).slice(0, 60)}`)),
       );
       v.src = VIDEO_URL;
@@ -92,6 +92,9 @@ export const App = () => {
 
   // Debug line: the player's clock, read once a second.
   useEffect(() => {
+    if (!SHOW_PLAYER_CLOCK) {
+      return;
+    }
     const t = setInterval(() => {
       const v = video.current;
       if (v) {
@@ -163,6 +166,7 @@ export const App = () => {
           </Text>
         </View>
         {error && <Text style={styles.err}>Can&apos;t reach Patch Hours. Retrying…</Text>}
+        {view?.simulated && <Text style={styles.sim}>Scripted run, not a camera</Text>}
         <Text style={styles.credit}>{VIDEO_CREDIT}</Text>
         {SHOW_PLAYER_CLOCK && media !== '' && <Text style={styles.media}>{media}</Text>}
       </View>
@@ -193,6 +197,7 @@ const styles = StyleSheet.create({
   dot: {width: 8, height: 8, borderRadius: 4},
   chipText: {fontSize: 14, fontWeight: '600'},
   media: {color: C.inkMuted, fontSize: 9, position: 'absolute', bottom: 20, width: 220},
+  sim: {color: C.accent, fontSize: 12},
   err: {color: C.off, fontSize: 11},
   credit: {color: C.inkMuted, fontSize: 10, position: 'absolute', bottom: 4},
 });

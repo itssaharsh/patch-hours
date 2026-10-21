@@ -17,7 +17,10 @@ export function HomeApp() {
   useEffect(() => {
     const saved = sessionStorage.getItem("ph.home.code");
     if (saved) { setCode(saved); return; }
-    createSession().then((s) => { sessionStorage.setItem("ph.home.code", s.code); setCode(s.code); });
+    const make = () => createSession()
+      .then((s) => { sessionStorage.setItem("ph.home.code", s.code); setCode(s.code); })
+      .catch(() => setTimeout(make, 3000));
+    make();
   }, []);
 
   const run = async () => {
@@ -28,7 +31,7 @@ export function HomeApp() {
       const end = Date.now() + step.sec * 1000;
       while (Date.now() < end && !stop.current) {
         await fetch(`/api/session/${code}/flag`, { method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ on: step.on, cls: step.cls, conf: 1, day: today(), lagMs: 0 }) });
+          body: JSON.stringify({ on: step.on, cls: step.cls, conf: 1, day: today(), lagMs: 0, sim: true }) }).catch(() => {});
         await new Promise((r) => setTimeout(r, 500));
       }
     }

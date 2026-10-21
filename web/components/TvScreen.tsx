@@ -112,6 +112,7 @@ export function TvScreen({ initialCode }: { initialCode?: string | null }) {
           {phase === "pairing" ? "Waiting for the phone" : phase === "playing" ? "Patch on" : phase === "paused-stale" ? "Phone not reporting" : "Patch off"}
         </p>
         {error && <p className={styles.err} role="alert">Can't reach Patch Hours. Retrying…</p>}
+        {view?.simulated && <p className={styles.sim}>Scripted run, not a camera</p>}
         <p className={styles.credit}>{VIDEO_CREDIT}</p>
       </aside>
     </div>
