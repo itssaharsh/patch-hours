@@ -24,7 +24,7 @@ export function CheckApp() {
   const [examples, setExamples] = useState<Example[]>([]);
   const [capturing, setCapturing] = useState<Label | null>(null);
   const [checking, setChecking] = useState(false);
-  const [live, setLive] = useState<{ cls: PatchClass; conf: number; on: boolean } | null>(null);
+  const [live, setLive] = useState<{ cls: PatchClass; conf: number; on: boolean; face: boolean } | null>(null);
   const [sent, setSent] = useState<{ ok: boolean; at: number } | null>(null);
   const [attestMin, setAttestMin] = useState("");
   const [note, setNote] = useState("");
@@ -110,7 +110,7 @@ export function CheckApp() {
     const on = smoothed === "patch" && counts.patch >= 2;
     const now = performance.now();
     if (!current.current || current.current.cls !== smoothed) current.current = { cls: smoothed, since: now };
-    setLive({ cls: smoothed, conf, on });
+    setLive({ cls: smoothed, conf, on, face: f.face });
     if (chk.current) {
       const changed = recent.current.length > 1 && recent.current[recent.current.length - 2] !== cls && smoothed === cls;
       if (changed || Date.now() - lastSend.current > 500) {
@@ -202,8 +202,8 @@ export function CheckApp() {
           </div>
         )}
         {phase === "ready" && live && (
-          <p className={s.status} role="status" aria-live="polite" data-cls={live.cls}>
-            {live.on ? "Patch on" : CLS_TEXT[live.cls]}
+          <p className={s.status} role="status" aria-live="polite" data-cls={!live.face ? "noface" : canCheck ? live.cls : "teach"}>
+            {!live.face ? CLS_TEXT.noface : !canCheck ? "Face found · teach the patch below" : live.on ? "Patch on" : CLS_TEXT[live.cls]}
           </p>
         )}
       </div>
@@ -264,6 +264,12 @@ export function CheckApp() {
         {note && phase === "ready" && <p className="muted" role="status">{note}</p>}
         <p><a href={`/week?code=${code}`}>See this week&apos;s minutes</a></p>
       </section>
+      {checking && live && (
+        <div className={s.bar} data-on={live.on ? "true" : "false"} aria-hidden>
+          <span>{live.on ? "Patch on · the show plays" : `${!live.face ? CLS_TEXT.noface : CLS_TEXT[live.cls]} · the show is paused`}</span>
+          <button className="btn tonal" onClick={() => setChecking(false)}>Stop</button>
+        </div>
+      )}
       <p className={s.foot}>An aid for wearing a prescribed patch. It does not treat amblyopia or change a prescription.</p>
     </main>
   );
