@@ -47,6 +47,30 @@ Only the on/off flag, a class name, a confidence and timestamps leave the phone:
 
 Run the checks: `npm --prefix web test` · `npm --prefix tv test`.
 
+## Run it yourself
+
+**Try it without building anything:** open https://patch-hours.vercel.app, press **Run the scripted check**, then click the TV picture to start the show. For the real loop, scan the TV's code with a phone and follow the three steps on the phone page (a skin-coloured sticky note over one eye works as a patch).
+
+**Web app and API** (Node 22):
+```bash
+cd web
+npm install
+npm run dev          # http://localhost:3000 — sessions are kept in memory
+# optional: set DATABASE_URL (Postgres, e.g. Neon) in web/.env.local to persist sessions
+```
+The phone page needs the camera, so open it on `localhost` or over HTTPS.
+
+**Fire TV app** (Vega SDK 0.24, Ubuntu x86_64 or macOS; under WSL2 also `sudo apt-get install libpulse0` and add yourself to the `kvm` group):
+```bash
+curl -fsSL https://sdk-installer.vega.labcollab.net/get_vvm.sh | bash   # Amazon's Vega SDK installer
+cd tv
+npm install
+npm run build:debug
+vega virtual-device start
+vega run-app build/x86_64-debug/patchhours_x86_64.vpkg
+```
+The app talks to `https://patch-hours.vercel.app` by default. To use a local web app instead, set `USE_DEV = true` in `tv/src/config.ts` (the virtual device reaches your machine at `10.0.2.2`). On a physical Fire TV, `VIDEO_URL` can point at `bunny-tv-480.mp4` to play with sound (FRICTION_LOG.md, item 11).
+
 ## Limits
 
 - An adherence aid for a prescribed patch. It does not treat amblyopia or change a prescription.
