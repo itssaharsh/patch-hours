@@ -2,46 +2,11 @@ node_modules/
 .env
 .env.*
 !.env.example
-.prod-build/logs/
-dist/
 .next/
+dist/
+coverage/
 __pycache__/
 .venv/
-coverage/
-.claude/worktrees/
-# prod-build: planning notes stay out of a judged repository
-hackathon-idea/
-prod-idea/
-notes/hackathon-idea/
-judging-intel*.md
-judging-notes*.md
-judge-notes*.md
-idea-package*.md
-idea_package*.md
-SUBMISSION.md
-submission.md
-SHOOT.md
-SCRIPT.md
-PITCH.md
-PITCH-NOTES.md
-DEMO-SCRIPT.md
-VIDEO-SCRIPT.md
-video-script.md
-# browser session files hold live sign-in cookies
-storage-state*.json
-storage_state*.json
-*.storage-state.json
-
-# local build notes, agent files and dev tools (not part of the entry)
-.prod-build/
-AGENTS.md
-CLAUDE.md
-UI-SPEC.md
-tools/
-docs/memory/
-web/AGENTS.md
-web/README.md
+tv/build/
 tv/generated/
-
-# zip output
 release/dist/
