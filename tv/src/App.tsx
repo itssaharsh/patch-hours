@@ -105,17 +105,6 @@ export const App = () => {
     wasPlaying.current = phase === 'playing';
   }, [phase, ready, view]);
 
-  // If the player stalled or refused play() while the patch is on, ask again.
-  useEffect(() => {
-    const t = setInterval(() => {
-      const v = video.current;
-      if (v && lastPhase.current === 'playing' && v.paused) {
-        v.play();
-      }
-    }, 2000);
-    return () => clearInterval(t);
-  }, []);
-
   // Debug line: the player's clock, read once a second.
   useEffect(() => {
     if (!SHOW_PLAYER_CLOCK) {
@@ -178,7 +167,7 @@ export const App = () => {
                   )}
                   <View style={styles.pairText}>
                     <Text style={styles.label}>Code</Text>
-                    <Text style={styles.code}>{code ?? '······'}</Text>
+                    <Text style={styles.code} numberOfLines={1}>{code ?? '······'}</Text>
                     <Text style={styles.muted}>
                       Scan with the phone that will watch the patch.
                     </Text>
@@ -283,9 +272,9 @@ const styles = StyleSheet.create({
   pairTitle: {color: C.ink, fontSize: 32, fontWeight: '800', marginBottom: 20},
   pairRow: {flexDirection: 'row', alignItems: 'center', gap: 24},
   qr: {width: 140, height: 140, borderRadius: 8, backgroundColor: C.surface2},
-  pairText: {maxWidth: 280},
+  pairText: {maxWidth: 340},
   label: {color: C.inkMuted, fontSize: 14},
-  code: {color: C.accent, fontSize: 60, fontWeight: '800', letterSpacing: 5},
+  code: {color: C.accent, fontSize: 54, fontWeight: '800', letterSpacing: 3},
   muted: {color: C.inkMuted, fontSize: 13},
   prompt: {color: C.ink, fontSize: 38, fontWeight: '800', textAlign: 'center'},
   note: {color: C.accent, fontSize: 15, marginTop: 10},

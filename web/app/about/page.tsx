@@ -24,7 +24,7 @@ export default function About() {
         <li>Only on or off leaves the phone. No pictures are sent or stored.</li>
         <li>Tested on the Vega Virtual Device, not a physical Fire TV.</li>
       </ul>
-      <p><a href="/">Try it live</a></p>
+      <p><a href="/">Try it live</a> · <a href="https://github.com/itssaharsh/patch-hours">View source</a></p>
     </main>
   );
 }

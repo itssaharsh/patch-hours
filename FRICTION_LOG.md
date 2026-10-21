@@ -75,3 +75,10 @@ Each entry: task · steps · expected vs actual · severity · workaround · sug
 - **Severity:** low.
 - **Workaround:** the emulator console on port 5554 (`auth <token>`, then `screenrecord screenshot <dir>` or `screenrecord start <file>.webm`) captures the composed screen, video included.
 - **Suggestion:** wrap it as `vega device screenshot` and `vega device screenrecord`.
+
+## 11. Playback freezes at about 6 s because the audio clock stops
+- **Task:** play a clip with sound on the virtual device under WSL2.
+- **Actual:** the player reports `playing`, but `currentTime` stops near 6 s. The device log shows `leaudiosink … audioPositionDiff 0` (the audio position never advances), and the video queue starves at 0–4%.
+- **Severity:** high (the reward video looks frozen in every demo).
+- **Workaround:** for the simulator, serve a copy of the clip with no audio track (`ffmpeg -c:v copy -an`); the clock then advances in real time, pauses and resumes. A physical Fire TV is not affected as far as we know.
+- **Suggestion:** fall back to the system clock when the audio sink stops advancing, or log a clear "audio output stalled" error.
