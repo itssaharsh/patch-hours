@@ -18,6 +18,7 @@ Two clients and one small API. Camera frames never leave the phone.
 | Classifier | patches differ by child; a fixed rule cannot tell a patch from a hand | per-child calibration, k-nearest-neighbour (cosine) over embeddings, held-out precision/recall | low agreement counts as off |
 | API | phone and TV are separate devices | Next.js route handlers on Vercel | TV polling tolerates misses; stale = pause |
 | Store | state shared across serverless invocations | Neon Postgres (one jsonb row per code); in-memory in dev and tests | none in prod |
+| Week note | a note for the eye clinic and a cheer for the child, from minute totals | facts by plain code (`web/lib/report.ts`); Amazon Nova 2 Lite phrases them (via Vercel AI Gateway, served by Amazon Bedrock); a number check and Bedrock Guardrails gate the text; Amazon Polly voices it; Amazon S3 keeps the clip (`web/lib/note.ts`, `web/lib/aws.ts`, `aws/patch-hours.yaml`) | plain template if any step fails; the TV never waits on it |
 
 Rules live in one pure module, `web/lib/rules.ts` (playable, minute accounting), shared by tests; the Vega app reads `playable` from the API rather than re-deciding it.
 

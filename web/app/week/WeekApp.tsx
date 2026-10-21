@@ -92,9 +92,9 @@ export function WeekApp() {
 
 function provenance(n: Note) {
   const voice = n.voiceUrl ? " Voice: Amazon Polly." : "";
-  if (n.source === "nova") return `Phrased by Amazon Nova 2 Lite on Amazon Bedrock. Numbers checked against the table; guardrail ${n.checks.guardrail === "passed" ? "passed" : "not configured"}.${voice}`;
+  if (n.source === "nova") return `Phrased by Amazon Nova 2 Lite (served by Amazon Bedrock). Numbers checked against the table; Bedrock guardrail ${n.checks.guardrail === "passed" ? "passed" : "not configured"}.${voice}`;
   const why = n.checks.guardrail === "intervened" ? "the guardrail stopped Nova's wording"
-    : n.checks.numbers === "failed" ? "Nova's wording didn't pass the number check or Bedrock was unavailable"
+    : n.checks.numbers === "failed" ? "Nova's wording didn't pass the number check or the model was unavailable"
     : "the AWS services aren't configured here";
   return `Plain template, because ${why}.${voice}`;
 }

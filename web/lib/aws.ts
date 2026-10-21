@@ -1,13 +1,17 @@
-// AWS for the week note and the child's cheer: Amazon Bedrock (Nova 2 Lite) phrases the note,
+// AWS for the week note and the child's cheer: Amazon Nova 2 Lite (served by Amazon Bedrock) phrases the note,
 // Bedrock Guardrails screens it, Amazon Polly speaks the cheer, Amazon S3 keeps the clip.
 // On Vercel the app signs in with its own OIDC token (role in aws/patch-hours.yaml); no AWS keys are stored.
+// Nova is reached through Vercel AI Gateway, which serves it from Amazon Bedrock, because this AWS account's
+// Bedrock model quota is 0 (the increase was declined). Set NOTE_VIA=bedrock to call Bedrock directly instead.
 import { ApplyGuardrailCommand, BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { awsCredentialsProvider } from "@vercel/oidc-aws-credentials-provider";
+import { generateText } from "ai";
 import { SYSTEM_PROMPT, parseTexts, userPrompt, type Texts, type WeekFacts } from "./report";
 
-export const MODEL_ID = "us.amazon.nova-2-lite-v1:0";
+export const MODEL_ID = "us.amazon.nova-2-lite-v1:0"; // Bedrock inference profile (NOTE_VIA=bedrock)
+export const GATEWAY_MODEL = "amazon/nova-2-lite"; // the same model through AI Gateway, served by Bedrock
 export const VOICE = { VoiceId: "Kajal", Engine: "generative", LanguageCode: "en-IN" } as const;
 
 export interface Ai {
@@ -40,6 +44,17 @@ function awsAi(): Ai {
   const guardrail = process.env.GUARDRAIL_ID;
   return {
     async write(f) {
+      if (process.env.NOTE_VIA !== "bedrock") {
+        const r = await generateText({
+          model: GATEWAY_MODEL,
+          system: SYSTEM_PROMPT,
+          prompt: userPrompt(f),
+          temperature: 0.2,
+          maxOutputTokens: 400,
+          providerOptions: { gateway: { only: ["bedrock"] } },
+        });
+        return { texts: parseTexts(r.text), model: `${GATEWAY_MODEL} (Amazon Bedrock via Vercel AI Gateway)` };
+      }
       const r = await bedrock.send(new ConverseCommand({
         modelId: MODEL_ID,
         system: [{ text: SYSTEM_PROMPT }],

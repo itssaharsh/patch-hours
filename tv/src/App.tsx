@@ -3,7 +3,7 @@ import {Dimensions, Image, StyleSheet, Text, View} from 'react-native';
 import {Video} from '@amazon-devices/react-native-w3cmedia';
 import {PatchRing} from './PatchRing';
 import {useTvSession} from './session';
-import {API, SHOW_PLAYER_CLOCK, VIDEO_CREDIT, VIDEO_URL} from './config';
+import {API, SHOW_PLAYER_CLOCK, SILENT_URL, VIDEO_CREDIT, VIDEO_URL} from './config';
 import {C} from './theme';
 
 type Phase =
@@ -104,6 +104,52 @@ export const App = () => {
     }
     wasPlaying.current = phase === 'playing';
   }, [phase, ready, view]);
+
+  // The show plays with sound. If its clock stops for 4 s after it had started moving (the virtual
+  // device's audio output stalls under WSL2), switch to the silent copy at the same point.
+  const [soundOff, setSoundOff] = useState(false);
+  const phaseNow = useRef<Phase>(phase);
+  phaseNow.current = phase;
+  useEffect(() => {
+    if (phase !== 'playing' || soundOff || !ready) {
+      return;
+    }
+    let last = -1;
+    let moved = false;
+    let still = 0;
+    const t = setInterval(() => {
+      const v = video.current;
+      if (!v) {
+        return;
+      }
+      const at = Number(v.currentTime ?? 0);
+      if (last >= 0 && Math.abs(at - last) < 0.05) {
+        still += 1;
+      } else {
+        moved = moved || last >= 0;
+        still = 0;
+      }
+      last = at;
+      if (moved && still >= 4) {
+        clearInterval(t);
+        setSoundOff(true);
+        const onReady = () => {
+          v.removeEventListener('loadedmetadata', onReady);
+          try {
+            v.currentTime = at;
+          } catch (e) {
+            // starting from the beginning is fine
+          }
+          if (phaseNow.current === 'playing') {
+            v.play();
+          }
+        };
+        v.addEventListener('loadedmetadata', onReady);
+        v.src = SILENT_URL;
+      }
+    }, 1000);
+    return () => clearInterval(t);
+  }, [phase, soundOff, ready]);
 
   // Debug line: the player's clock, read once a second.
   useEffect(() => {
@@ -231,6 +277,9 @@ export const App = () => {
         )}
         {view?.simulated && (
           <Text style={styles.sim}>Scripted run, not a camera</Text>
+        )}
+        {soundOff && (
+          <Text style={styles.sim}>Sound off: this device’s audio stalled</Text>
         )}
         <Text style={styles.credit}>{VIDEO_CREDIT}</Text>
         {SHOW_PLAYER_CLOCK && media !== '' && (

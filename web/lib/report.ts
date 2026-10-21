@@ -112,7 +112,7 @@ export const SYSTEM_PROMPT = [
   "Use only numbers that appear in the data. Write numbers as digits. Use minutes, never hours. Do not round or convert.",
   "Never give treatment advice: do not suggest changing, stopping, shortening or adding patching time.",
   'Reply with JSON only, no code fence: {"note": "...", "cheer": "..."}',
-  "note: for the child's orthoptist, 2 to 4 plain sentences. Camera-verified minutes against the prescription, on how many days, the pattern across the week (name the weekdays that were missed or strongest), and that minutes the parent added by hand are listed separately. If simulated is true, say some minutes came from a scripted demo, not a camera.",
+  "note: for the child's orthoptist, 2 to 4 plain sentences. Start with the camera-verified minutes for the week against the prescribed minutes for the week, with the percentage. Then on how many days the camera saw the patch and on how many the full prescription was met, then the pattern across the week (name the weekdays that were missed or strongest). Say that minutes the parent added by hand are listed separately, with their total. If simulated is true, say some minutes came from a scripted demo, not a camera.",
   "cheer: one warm sentence of at most 15 words, spoken aloud to a child aged 3 to 7. Praise the effort. No medical words. No numbers above 7.",
 ].join("\n");
 

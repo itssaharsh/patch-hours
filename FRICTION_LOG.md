@@ -80,7 +80,7 @@ Each entry: task · steps · expected vs actual · severity · workaround · sug
 - **Task:** play a clip with sound on the virtual device under WSL2.
 - **Actual:** the player reports `playing`, but `currentTime` stops near 6 s. The device log shows `leaudiosink … audioPositionDiff 0` (the audio position never advances), and the video queue starves at 0–4%.
 - **Severity:** high (the reward video looks frozen in every demo).
-- **Workaround:** for the simulator, serve a copy of the clip with no audio track (`ffmpeg -c:v copy -an`); the clock then advances in real time, pauses and resumes. A physical Fire TV is not affected as far as we know.
+- **Workaround:** the app plays the clip with sound and watches the player's clock; if it stops for 4 s after it had started moving, it switches `src` to a copy with no audio track (`ffmpeg -c:v copy -an`) at the same point and shows "Sound off". The clock then advances in real time, pauses and resumes. A physical Fire TV keeps the sound, as far as we know.
 - **Suggestion:** fall back to the system clock when the audio sink stops advancing, or log a clear "audio output stalled" error.
 
 ## 12. After a WSL restart the device dies at boot, again with only the deadline message
