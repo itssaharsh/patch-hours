@@ -31,3 +31,14 @@ video-script.md
 storage-state*.json
 storage_state*.json
 *.storage-state.json
+
+# local build notes, agent files and dev tools (not part of the entry)
+.prod-build/
+AGENTS.md
+CLAUDE.md
+UI-SPEC.md
+tools/
+docs/memory/
+web/AGENTS.md
+web/README.md
+tv/generated/
